@@ -15,7 +15,8 @@ type Me = {
 const PRIZES = ['Vice captain', 'Fireball', 'Pick your position'];
 
 export default function Page() {
-  const sb = useRef(supabase()).current;
+  const sbRef = useRef<ReturnType<typeof supabase> | null>(null);
+  const getSb = () => { if (!sbRef.current) sbRef.current = supabase(); return sbRef.current; };
   const [token, setToken] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [screen, setScreen] = useState<'load' | 'auth' | 'claim' | 'start' | 'play' | 'reveal' | 'done' | 'board'>('load');
@@ -42,14 +43,14 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    sb.auth.getSession().then(async ({ data }) => {
+    getSb().auth.getSession().then(async ({ data }) => {
       const t = data.session?.access_token ?? null;
       setToken(t);
       if (!t) { setScreen('auth'); return; }
       const d = await refresh(t);
       setScreen(d && d.pending.length && !d.playedToday ? 'claim' : 'start');
     });
-  }, [sb, refresh]);
+  }, [refresh]);
 
   async function doAuth(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setBusy(true);
@@ -59,18 +60,18 @@ export default function Page() {
     try {
       const email = emailFor(name);
       if (mode === 'up') {
-        const { data, error } = await sb.auth.signUp({ email, password: pass });
+        const { data, error } = await getSb().auth.signUp({ email, password: pass });
         if (error) throw error;
         const uid = data.user?.id;
         if (uid) {
-          const { error: pe } = await sb.from('players').insert({ id: uid, username: name });
+          const { error: pe } = await getSb().from('players').insert({ id: uid, username: name });
           if (pe && pe.code === '23505') throw new Error('That name is taken. Try another.');
         }
       } else {
-        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        const { error } = await getSb().auth.signInWithPassword({ email, password: pass });
         if (error) throw new Error('No account with that name and password.');
       }
-      const { data: s } = await sb.auth.getSession();
+      const { data: s } = await getSb().auth.getSession();
       const t = s.session?.access_token ?? null; setToken(t);
       if (t) { const d = await refresh(t); setScreen(d && d.pending.length && !d.playedToday ? 'claim' : 'start'); }
     } catch (e: any) {
@@ -390,7 +391,7 @@ export default function Page() {
           </div>
           <button className="btn ghost" style={{ marginTop: 12 }} onClick={() => setScreen('start')}>Back</button>
           <button className="btn ghost" style={{ marginTop: 10 }}
-            onClick={async () => { await sb.auth.signOut(); location.reload(); }}>Sign out</button>
+            onClick={async () => { await getSb().auth.signOut(); location.reload(); }}>Sign out</button>
           <p className="foot">Hame Bakery Premiership, Seasons 1 to 3.<br />Same seven questions for everyone, every day.</p>
         </section>
       )}
