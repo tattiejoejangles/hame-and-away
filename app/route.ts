@@ -1,13 +1,11 @@
-import { readFile } from 'fs/promises';
-import path from 'path';
+import { PAGE_B64 } from '../lib/page';
 
 export const dynamic = 'force-dynamic';
 
-/** Serves the game page. It is the same file the Supabase function serves, so
- *  there is only ever one copy of the game to keep right. */
+/** Serves the game. Same page the Supabase function serves, so there is only
+ *  ever one copy of the game to keep right. */
 export async function GET() {
-  const file = path.join(process.cwd(), 'public', 'play.html');
-  const html = (await readFile(file, 'utf8'))
+  const html = Buffer.from(PAGE_B64, 'base64').toString('utf8')
     .replace('__SB_URL__', process.env.NEXT_PUBLIC_SUPABASE_URL || '')
     .replace('__SB_KEY__', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
   return new Response(html, {
