@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SB_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+/* Pasting a value into a hosting dashboard often drags a newline along with it,
+   which quietly breaks every address built from it. Trim everything. */
+export const env = (k: string) => (process.env[k] || '').trim();
+const SB_URL  = env('NEXT_PUBLIC_SUPABASE_URL');
+const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY');
 
 /** Server-only. The service role key bypasses row level security, which is why
  *  scores can only ever be written here and never from a browser. */
