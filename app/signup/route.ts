@@ -21,27 +21,13 @@ export async function POST(req: Request) {
     const msg = (ce?.message || '').toLowerCase();
     return json({ error: msg.includes('already') ? 'That name is taken. Try signing in instead.' : 'Could not sign you up.' }, 400);
   }
-  const { error: pe } = await db.from('players').insert({ id: made.user.id, username: name });
+  const { count } = await db.from('players').select('id', { count: 'exact', head: true });
+  const first = (count ?? 0) === 0;   // whoever sets it up runs it
+  const { error: pe } = await db.from('players')
+    .insert({ id: made.user.id, username: name, is_admin: first });
   if (pe) { await db.auth.admin.deleteUser(made.user.id); return json({ error: 'That name is taken.' }, 409); }
 
-  // Rounds played before accounts existed come across on their own, but only to
-  // the name they were posted under. Nobody gets to pick someone else's score.
-  const key = (n: string) => (n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const { data: waiting } = await db.from('pending_scores')
-    .select('id,username,matchday,total,keepers').is('claimed_by', null);
-  const mine = (waiting || []).filter(r => key(r.username) === key(name));
-  let claimed = 0;
-  for (const row of mine) {
-    const { error: se } = await db.from('scores').insert({
-      player_id: made.user.id, matchday: row.matchday,
-      total: row.total, keepers: row.keepers, grid: '',
-    });
-    if (!se || (se as any).code === '23505') {
-      await db.from('pending_scores')
-        .update({ claimed_by: made.user.id, claimed_at: new Date().toISOString() })
-        .eq('id', row.id);
-      claimed++;
-    }
-  }
-  return json({ ok: true, claimed });
+  // Old scores are assigned by hand from the admin page, never picked up
+  // automatically: a nickname is not proof of whose round it was.
+  return json({ ok: true });
 }

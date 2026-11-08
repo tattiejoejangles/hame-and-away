@@ -87,3 +87,11 @@ export function scoreRound(md: number, given: (string | null)[]) {
     s.yds >= 40 ? '🟧' : '🟥').join('');
   return { shots, total, keepers, grid };
 }
+
+/** Only the league's keeper may touch the admin routes. */
+export async function adminUser(req: Request) {
+  const u = await userFrom(req);
+  if (!u) return null;
+  const { data } = await admin().from('players').select('username,is_admin').eq('id', u.id).maybeSingle();
+  return data?.is_admin ? { id: u.id, username: data.username } : null;
+}
