@@ -72,6 +72,15 @@ a.btn svg{width:19px;height:19px;flex:none}
 .err{color:var(--bad);font-size:13.5px;margin:2px 2px 0;min-height:20px}
 .swap{display:block;width:100%;background:none;border:0;color:var(--chalk-dim);text-decoration:underline;
   font-size:13.5px;padding:12px;margin-top:4px}
+.caps{list-style:none;margin:0;padding:0}
+.caps li{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:9px 0;
+  border-bottom:1px dotted var(--line)}
+.caps li:last-child{border-bottom:0}
+.caps .cnm{font-weight:700;font-size:15.5px}
+.caps .csub{display:block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--chalk-dim);margin-top:3px}
+.caps .ctot{font-family:var(--font-display);font-size:20px;text-align:right;color:var(--chalk-dim)}
+.caps .ctot small{display:block;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;font-weight:400}
 .claim{list-style:none;margin:0;padding:0}
 .claim li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
 .claim li:last-child{border-bottom:0}
@@ -351,6 +360,10 @@ a.btn svg{width:19px;height:19px;flex:none}
       <button role="tab" id="tab-week" aria-selected="true">This week</button>
       <button role="tab" id="tab-day" aria-selected="false">Today</button>
     </div>
+    <div class="panel hide" id="cap-panel"><h3>Not in the running</h3>
+      <ul class="caps" id="b-caps"></ul>
+      <p class="more">Plays every day, never counts towards the prizes.</p></div>
+
     <div class="panel"><h3 id="b-title">Week table</h3>
       <ul class="lbt" id="b-rows"></ul>
       <p class="more" id="b-local"></p>
@@ -358,7 +371,7 @@ a.btn svg{width:19px;height:19px;flex:none}
     </div>
 
     <div class="panel"><h3>Week 1 prizes</h3>
-      <div class="prize g"><b>1st</b><span>Vice captain<i>Provisional, for a month. Reviewed at the end of it.</i></span></div>
+      <div class="prize g"><b>1st</b><span>Vice captain<i>Provisional, for a month. Reviewed at the end of it. The captaincy is taken.</i></span></div>
       <div class="prize s"><b>2nd</b><span>A fireball<i>To be served at the earliest opportunity.</i></span></div>
       <div class="prize br"><b>3rd</b><span>Pick your position in Pro Clubs<i>Anywhere you like, for a week. Yes, including striker.</i></span></div>
     </div>
@@ -939,7 +952,18 @@ function renderBoard(){
       '<span class="tot">'+a.total+'<small>yds</small></span></li>';
   }).join('');
 }
-function openBoard(){ show('s-board'); renderBoard(); }
+function renderCaptains(){
+  const caps=(ME&&ME.captains)||[];
+  $('cap-panel').classList.toggle('hide', caps.length===0);
+  $('b-caps').innerHTML=caps.map(c=>{
+    const t = c.today!=null ? c.today+' yds today' : 'not played today';
+    const sub = t + (c.rounds? ' \u00b7 '+c.week+' this week' : '');
+    return '<li><span><span class="cnm">'+esc(c.username)+'</span>'+
+      '<span class="csub">'+sub+'</span></span>'+
+      '<span class="ctot">'+(c.today!=null?c.today:'\u2013')+'<small>yds</small></span></li>';
+  }).join('');
+}
+function openBoard(){ show('s-board'); renderBoard(); renderCaptains(); }
 
 /* ---------- wiring ---------- */
 /* typing #keeper into the address bar on an open page needs a reload to take effect */
