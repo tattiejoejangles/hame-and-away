@@ -889,6 +889,7 @@ let BOARD='week', ME=null, TOKEN=null;
 
 /* Injected when the page is served. */
 const SB_URL='__SB_URL__', SB_KEY='__SB_KEY__';
+const CONFIGURED = SB_URL.indexOf('http')===0 && SB_KEY.length>10;
 const API = location.pathname.replace(/\/+$/,'') + '/';
 
 async function api(path, body){
@@ -1028,6 +1029,13 @@ function afterLogin(){
 }
 async function start(){
   $('mdlabel').textContent='Matchday #'+matchdayNo();
+  if(!CONFIGURED){
+    show('s-auth');
+    $('autherr').innerHTML='This copy of the site has no database settings, so nothing can work yet. '+
+      'Open <b>/health</b> on this address to see what is missing.';
+    $('authgo').disabled=true;
+    return;
+  }
   $('topright').textContent=PER+' \u00d7 '+SECS+'s';
   const pref=load(); SFXON = pref.sfx!==false; paintSfx();
   const ok = await sbRestore();
