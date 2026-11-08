@@ -8,8 +8,18 @@ const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY');
 
 /** Server-only. The service role key bypasses row level security, which is why
  *  scores can only ever be written here and never from a browser. */
+/* Next caches fetches made inside route handlers, and supabase-js talks over
+   fetch. That means a reply can be served from an earlier request: set a flag
+   in the database and the app carries on seeing the old value. Force every
+   database call to go to the database. */
+const freshFetch: typeof fetch = (input, init) =>
+  fetch(input as any, { ...(init || {}), cache: 'no-store' });
+
 export const admin = () =>
-  createClient(SB_URL, SERVICE, { auth: { persistSession: false } });
+  createClient(SB_URL, SERVICE, {
+    auth: { persistSession: false },
+    global: { fetch: freshFetch },
+  });
 
 export async function userFrom(req: Request) {
   const a = req.headers.get('authorization') || '';
