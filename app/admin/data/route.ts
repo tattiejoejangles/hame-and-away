@@ -3,8 +3,9 @@ import { admin, adminUser, json, matchdayNo, weekOf } from '../../../lib/server'
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const me = await adminUser(req);
-  if (!me) return json({ error: 'Not allowed.' }, 403);
+  const gate = await adminUser(req);
+  if (!gate.ok) return json({ error: gate.why }, 403);
+  const me = gate;
   const db = admin(), md = matchdayNo();
 
   const [players, pending, scores] = await Promise.all([

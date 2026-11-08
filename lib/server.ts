@@ -88,10 +88,15 @@ export function scoreRound(md: number, given: (string | null)[]) {
   return { shots, total, keepers, grid };
 }
 
-/** Only the league's keeper may touch the admin routes. */
+/** Only the league's keeper may touch the admin routes. Returns a reason when
+ *  it says no, so a refusal can be told apart from a stale sign-in. */
 export async function adminUser(req: Request) {
   const u = await userFrom(req);
-  if (!u) return null;
-  const { data } = await admin().from('players').select('username,is_admin').eq('id', u.id).maybeSingle();
-  return data?.is_admin ? { id: u.id, username: data.username } : null;
+  if (!u) return { ok: false as const, why: 'Your sign-in has expired. Sign in again.' };
+  const { data, error } = await admin()
+    .from('players').select('username,is_admin').eq('id', u.id).maybeSingle();
+  if (error) return { ok: false as const, why: 'Could not read your account: ' + error.message };
+  if (!data) return { ok: false as const, why: 'No player record for this account.' };
+  if (!data.is_admin) return { ok: false as const, why: data.username + ' does not run the league.' };
+  return { ok: true as const, id: u.id, username: data.username };
 }

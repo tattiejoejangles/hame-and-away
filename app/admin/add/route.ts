@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic';
 /** Adds a score by hand: onto an account, or to the unassigned pile if the
  *  player has not signed up yet. */
 export async function POST(req: Request) {
-  const me = await adminUser(req);
-  if (!me) return json({ error: 'Not allowed.' }, 403);
+  const gate = await adminUser(req);
+  if (!gate.ok) return json({ error: gate.why }, 403);
+  const me = gate;
   const { playerId, username, matchday, total, keepers } = await req.json().catch(() => ({} as any));
   const md = Number(matchday), tot = Number(total), kg = Number(keepers) || 0;
   if (!(md > 0)) return json({ error: 'Which matchday?' }, 400);

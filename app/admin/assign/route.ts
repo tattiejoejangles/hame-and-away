@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 
 /** Moves one unclaimed score onto a chosen account. */
 export async function POST(req: Request) {
-  const me = await adminUser(req);
-  if (!me) return json({ error: 'Not allowed.' }, 403);
+  const gate = await adminUser(req);
+  if (!gate.ok) return json({ error: gate.why }, 403);
+  const me = gate;
   const { pendingId, playerId } = await req.json().catch(() => ({} as any));
   if (!pendingId || !playerId) return json({ error: 'Pick a score and a player.' }, 400);
 
